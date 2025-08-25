@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CorteX - Otimizador de Cortes</title>
+    
+    <style>
+        /* (CSS principal, sem grandes mudanças) */
+        :root{--cor-fundo:#f4f7f9;--cor-branco:#ffffff;--cor-cinza-claro:#e9eef2;--cor-texto:#333d49;--cor-texto-suave:#6b7a8c;--cor-primaria:#007bff;--cor-sucesso:#28a745;--sombra:0 4px 12px rgba(0, 0, 0, 0.08);}
+        *{box-sizing:border-box}
+        body{font-family:'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;display:flex;flex-wrap:wrap;gap:30px;padding:30px;background-color:var(--cor-fundo);margin:0;color:var(--cor-texto)}
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        h1,h2,h3,h4,h5{font-weight:600;margin-top:0}
+        .sidebar{flex:1;min-width:350px;background:var(--cor-branco);padding:25px;border-radius:12px;box-shadow:var(--sombra);align-self:flex-start}
+        .main-content{flex:3;min-width:500px}
+        hr{border:none;border-top:1px solid var(--cor-cinza-claro);margin:25px 0}
+        .app-header{width:100%;margin-bottom:10px}
+        .app-header h1{font-size:2.5rem;font-weight:700;color:var(--cor-texto);margin:0}
+        .app-header span{color:var(--cor-primaria)}
+        .form-section h4{margin-bottom:15px;font-size:1.1rem}
+        .peca-item{display:grid;grid-template-columns:1fr 1fr .7fr;gap:10px;margin-bottom:10px}
+        input[type=number]{padding:12px;border:1px solid var(--cor-cinza-claro);border-radius:8px;width:100%;font-size:1rem;transition:border-color .2s,box-shadow .2s}
+        input[type=number]:focus{outline:none;border-color:var(--cor-primaria);box-shadow:0 0 0 3px rgba(0,123,255,.15)}
+        button{padding:12px 18px;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:600;transition:all .2s ease}
+        .btn-secondary{background-color:var(--cor-primaria);color:var(--cor-branco);width:100%}
+        .btn-secondary:hover{background-color:#0056b3}
+        .btn-primary{background-color:var(--cor-sucesso);color:var(--cor-branco);width:100%;margin-top:15px;font-size:1.1rem}
+        .btn-primary:hover{background-color:#218838;transform:translateY(-2px);box-shadow:0 4px 8px rgba(40,167,69,.3)}
+        .btn-expand{background-color:#6c757d;color:white;padding:6px 12px;font-size:.8rem;margin-top:15px}
+        .btn-expand:hover{background-color:#5a6268}
+        .legenda-container{list-style:none;padding:0}
+        .legenda-item{display:flex;align-items:center;margin-bottom:10px}
+        .cor-box{width:22px;height:22px;margin-right:12px;border-radius:4px}
+        #visualizacao-container{display:flex;flex-direction:column;gap:30px}
+        .chapa-container{background:var(--cor-branco);padding:20px;border-radius:12px;box-shadow:var(--sombra)}
+        .chapa-visualizacao{position:relative;background-color:var(--cor-cinza-claro);border:1px solid #d8dee3;border-radius:4px;margin-top:15px}
+        .peca-desenhada{position:absolute;box-sizing:border-box;border:1.5px solid rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(0,0,0,.8);font-weight:600;overflow:hidden;text-align:center;flex-direction:column;line-height:1.2}
+        .info-plano{font-size:1rem;color:var(--cor-texto-suave);margin-bottom:5px}
+        .info-plano strong{color:var(--cor-texto)}
+        .resumo-pecas{margin-top:15px;border-top:1px solid var(--cor-cinza-claro);padding-top:15px}
+        .resumo-pecas h5{margin:0 0 10px 0;font-size:1rem}
+        .resumo-pecas ul{margin:0;padding-left:20px;font-size:.9rem;color:var(--cor-texto-suave)}
+        .resumo-pecas li{margin-bottom:5px}
+        .modal-backdrop{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,.7);overflow:auto;padding-top:50px}
+        .modal-content{background-color:#fff;margin:auto;padding:20px;border-radius:12px;width:90%;max-width:800px;position:relative;animation:fadeIn .3s}
+        .close-btn{color:#aaa;position:absolute;top:10px;right:20px;font-size:28px;font-weight:bold;cursor:pointer}
+        .close-btn:hover{color:#000}
+        #modal-content-container{display:flex;justify-content:center;align-items:center;margin-top:20px}
+        .export-buttons { margin-top: 20px; display: flex; gap: 10px; }
+        .export-buttons a { text-decoration: none; color: white; background-color: #17a2b8; padding: 10px 15px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; text-align: center;}
+        .export-buttons a:hover { background-color: #138496; }
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @media (max-width:768px){body{flex-direction:column;padding:15px}.sidebar,.main-content{min-width:100%}}
+    </style>
+</head>
+<body>
+    <header class="app-header"><h1>Corte<span>X</span></h1></header>
+
+    <div class="sidebar">
+        <!-- O formulário HTML não muda -->
+        <form method="POST"><div class="form-section"><h4>Dimensões da Chapa</h4><div class="peca-item" style="grid-template-columns: 1fr 1fr;"><input type="number" name="chapa_largura" placeholder="Largura" required><input type="number" name="chapa_altura" placeholder="Altura" required></div></div><hr><div class="form-section"><h4>Peças a Cortar</h4><div id="lista-pecas"><div class="peca-item"><input type="number" name="peca_0_largura" placeholder="Largura"><input type="number" name="peca_0_altura" placeholder="Altura"><input type="number" name="peca_0_quantidade" placeholder="Qtd."></div></div></div><button type="button" class="btn-secondary" onclick="adicionarPeca()">+ Adicionar Peça</button><button type="submit" class="btn-primary">Calcular Plano</button></form>
+        {% if resultado and resultado.legenda %}<hr><h4>Legenda</h4><ul class="legenda-container">{% for item in resultado.legenda %}<li class="legenda-item"><span class="cor-box" style="background-color: {{ item.cor }};"></span><span>{{ item.tipo }}</span></li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="main-content">
+        {% if erro %}<h3 style="color: #dc3545;">{{ erro }}</h3>{% endif %}
+        {% if resultado %}
+            <h3>Relatório de Corte</h3>
+            <p class="info-plano"><strong>Total de Chapas Utilizadas:</strong> {{ resultado.total_chapas }}</p>
+            <p class="info-plano"><strong>Aproveitamento Geral:</strong> {{ resultado.aproveitamento_geral }}</p>
+            
+            <!-- NOVOS BOTÕES DE EXPORTAÇÃO -->
+            <div class="export-buttons">
+                <a href="/export/pdf">Exportar para PDF</a>
+                <a href="/export/excel">Exportar para Excel</a>
+            </div>
+            
+            <div id="visualizacao-container"></div>
+        {% endif %}
+    </div>
+
+    <div id="modal-visualizacao" class="modal-backdrop"><div class="modal-content"><span class="close-btn">&times;</span><h4>Visualização Detalhada do Plano de Corte</h4><div id="modal-content-container"></div></div></div>
+
+    <script>
+        let pecaIndex = 1; function adicionarPeca() { const container = document.getElementById('lista-pecas'); const novoItem = document.createElement('div'); novoItem.className = 'peca-item'; novoItem.innerHTML = `<input type="number" name="peca_${pecaIndex}_largura" placeholder="Largura"><input type="number" name="peca_${pecaIndex}_altura" placeholder="Altura"><input type="number" name="peca_${pecaIndex}_quantidade" placeholder="Qtd.">`; container.appendChild(novoItem); pecaIndex++; }
+        const modal = document.getElementById('modal-visualizacao'); const modalContentContainer = document.getElementById('modal-content-container'); const closeBtn = document.querySelector('.close-btn');
+        function fecharModal() { modal.style.display = 'none'; modalContentContainer.innerHTML = ''; }
+        function abrirModal(plano, chapaInfo) {
+            modalContentContainer.innerHTML = ''; const visContainer = document.createElement('div'); visContainer.className = 'chapa-visualizacao';
+            const fatorEscalaModal = Math.min(600 / chapaInfo.largura, 500 / chapaInfo.altura);
+            visContainer.style.width = (chapaInfo.largura * fatorEscalaModal) + 'px'; visContainer.style.height = (chapaInfo.altura * fatorEscalaModal) + 'px';
+            plano.forEach(peca => {
+                const divPeca = document.createElement('div'); divPeca.className = 'peca-desenhada';
+                divPeca.style.left = (peca.x * fatorEscalaModal) + 'px'; divPeca.style.top = (peca.y * fatorEscalaModal) + 'px';
+                divPeca.style.width = (peca.largura * fatorEscalaModal) + 'px'; divPeca.style.height = (peca.altura * fatorEscalaModal) + 'px';
+                divPeca.style.backgroundColor = peca.cor;
+                // MUDANÇA #1: REMOVIDO o ID da visualização, mostrando apenas as dimensões.
+                divPeca.innerHTML = `<span>${peca.largura}x${peca.altura}</span>`;
+                visContainer.appendChild(divPeca);
+            });
+            modalContentContainer.appendChild(visContainer); modal.style.display = 'block';
+        }
+        closeBtn.onclick = fecharModal; window.onclick = function(event) { if (event.target == modal) { fecharModal(); } }
+
+        function desenharResultado() {
+            {% if resultado and chapa %}
+                const resultado = JSON.parse('{{ resultado_json | safe }}'); const chapaInfo = {{ chapa | tojson | safe }}; const mainContainer = document.getElementById('visualizacao-container'); mainContainer.innerHTML = '';
+                const fatorEscalaPrincipal = Math.min(500 / chapaInfo.largura, 400 / chapaInfo.altura);
+
+                resultado.planos_unicos.forEach((plano_unico, index) => {
+                    const chapaContainer = document.createElement('div'); chapaContainer.className = 'chapa-container';
+                    
+                    // MUDANÇA #2: ALTERAÇÃO SUTIL NO TEXTO
+                    let tituloHTML = `<h4>Plano de Corte Único #${index + 1}</h4>`;
+                    if (plano_unico.repeticoes > 0) { // Usamos > 0 para abranger o caso de 1 chapa também
+                        tituloHTML += `<p class="info-plano"><strong>Utilizado ${plano_unico.repeticoes} chapas</strong></p>`;
+                    }
+                    tituloHTML += `<p class="info-plano"><strong>Sobra neste plano:</strong> ${plano_unico.sobra_area.toFixed(2)} (unidade²)</p>`;
+                    chapaContainer.innerHTML = tituloHTML;
+                    
+                    if (plano_unico.resumo_pecas && plano_unico.resumo_pecas.length > 0) { const resumoDiv = document.createElement('div'); resumoDiv.className = 'resumo-pecas'; let resumoHTML = '<h5>Peças neste plano:</h5><ul>'; plano_unico.resumo_pecas.forEach(item => { resumoHTML += `<li><strong>${item.qtd}x</strong> - ${item.tipo}</li>`; }); resumoHTML += '</ul>'; resumoDiv.innerHTML = resumoHTML; chapaContainer.appendChild(resumoDiv); }
+                    const visContainer = document.createElement('div'); visContainer.className = 'chapa-visualizacao';
+                    visContainer.style.width = (chapaInfo.largura * fatorEscalaPrincipal) + 'px'; visContainer.style.height = (chapaInfo.altura * fatorEscalaPrincipal) + 'px';
+                    
+                    plano_unico.plano.forEach(peca => {
+                        const divPeca = document.createElement('div'); divPeca.className = 'peca-desenhada';
+                        divPeca.style.left = (peca.x * fatorEscalaPrincipal) + 'px'; divPeca.style.top = (peca.y * fatorEscalaPrincipal) + 'px';
+                        divPeca.style.width = (peca.largura * fatorEscalaPrincipal) + 'px'; divPeca.style.height = (peca.altura * fatorEscalaPrincipal) + 'px';
+                        divPeca.style.backgroundColor = peca.cor;
+                        
+                        if (peca.largura * fatorEscalaPrincipal > 40 && peca.altura * fatorEscalaPrincipal > 20) {
+                           // MUDANÇA #3: REMOVIDO o ID da visualização principal.
+                           divPeca.innerHTML = `<span>${peca.largura}x${peca.altura}</span>`;
+                        }
+                        visContainer.appendChild(divPeca);
+                    });
+                    
+                    chapaContainer.appendChild(visContainer);
+                    const expandButton = document.createElement('button'); expandButton.className = 'btn-expand'; expandButton.innerText = 'Expandir Visualização'; expandButton.onclick = () => abrirModal(plano_unico.plano, chapaInfo); chapaContainer.appendChild(expandButton);
+                    mainContainer.appendChild(chapaContainer);
+                });
+            {% endif %}
+        }
+        document.addEventListener('DOMContentLoaded', desenharResultado);
+    </script>
+</body>
+</html>

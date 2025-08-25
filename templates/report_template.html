@@ -1,0 +1,62 @@
+<!-- templates/report_template.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Corte - CorteX</title>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; }
+        h1, h2, h3 { color: #333; }
+        .page-break { page-break-before: always; }
+        .summary { margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .plan-container { margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .footer { margin-top: 40px; text-align: center; color: #777; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>CorteX - Relatório de Otimização de Corte</h1>
+    
+    <div class="summary">
+        <h3>Resumo Geral</h3>
+        <p><strong>Dimensões da Chapa:</strong> {{ chapa.largura }} x {{ chapa.altura }}</p>
+        <p><strong>Total de Chapas Utilizadas:</strong> {{ resultado.total_chapas }}</p>
+        <p><strong>Aproveitamento Geral:</strong> {{ resultado.aproveitamento_geral }}</p>
+    </div>
+
+    {% for plano in resultado.planos_unicos %}
+    <div class="plan-container">
+        <h2>Plano de Corte Único #{{ loop.index }}</h2>
+        <p><strong>Utilizado {{ plano.repeticoes }} chapas</strong></p>
+        <p><strong>Sobra neste plano:</strong> {{ "%.2f"|format(plano.sobra_area) }} (unidade²)</p>
+        
+        <!-- MUDANÇA PRINCIPAL: TABELA DE RESUMO EM VEZ DE DETALHADA -->
+        <h3>Peças Utilizadas Neste Plano:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Quantidade</th>
+                    <th>Dimensões da Peça (LxA)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in plano.resumo_pecas %}
+                <tr>
+                    <td>{{ item.qtd }}x</td>
+                    <td>{{ item.tipo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if not loop.last %}<div class="page-break"></div>{% endif %}
+    {% endfor %}
+
+    <!-- MUDANÇA DO TEXTO DO CARIMBO AQUI -->
+    <div class="footer">
+        <p>Aproveitamento feito em {{ timestamp }}</p>
+    </div>
+</body>
+</html>
